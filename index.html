@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Base Likes</title>
+</head>
+<body>
+  <h2>Base Likes – like() demo</h2>
+  <button id="connect">Connect Wallet</button>
+  <button id="likeBtn" disabled>Send like()</button>
+  <p id="status"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script>
+    const CONTRACT_ADDRESS = "0x15049AeCbAa6349db0292838285f65dD6b420Cfb"; // 
+    const ABI = [
+      {"inputs":[],"name":"like","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"totalLikes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+    ];
+
+    let provider, signer, contract;
+
+    async function connect(){
+      if(!window.ethereum){ alert("Install MetaMask first."); return; }
+      await ethereum.request({ method:"eth_requestAccounts" });
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      const net = await provider.getNetwork();
+      if(net.chainId !== 8453){
+        await ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x2105" }]
+        });
+      }
+      signer = provider.getSigner();
+      contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+      document.getElementById("status").innerText = "Wallet connected on Base";
+      document.getElementById("likeBtn").disabled = false;
+    }
+
+    async function like(){
+      try{
+        document.getElementById("status").innerText = "Sending tx...";
+        const tx = await contract.like();
+        await tx.wait();
+        const total = await contract.totalLikes();
+        document.getElementById("status").innerText = "✅ Done! totalLikes = " + total.toString();
+      }catch(e){
+        document.getElementById("status").innerText = "❌ Error: " + (e.message || e);
+      }
+    }
+
+    document.getElementById("connect").onclick = connect;
+    document.getElementById("likeBtn").onclick = like;
+  </script>
+</body>
+</html>
